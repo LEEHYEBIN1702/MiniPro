@@ -1,14 +1,18 @@
 package co.micol.minipro.member.dao;
 
 
+import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.List;
 
 import co.micol.minipro.common.DAO;
 import co.micol.minipro.common.DbInterface;
+import co.micol.minipro.common.EmployeeVo;
 import co.micol.minipro.member.service.MemberVo;
+import oracle.jdbc.internal.OracleTypes;
 
 
 public class MemberDao extends DAO implements DbInterface<MemberVo> {
@@ -157,6 +161,83 @@ public class MemberDao extends DAO implements DbInterface<MemberVo> {
 			close();
 		}
 		return vo;
+	}
+	
+	public EmployeeVo getSalaryInfo(int empId, int salary) {
+		EmployeeVo resultVo = null;
+		try {
+			CallableStatement csmt = conn.prepareCall("{ call SAL_HISTORY_PROC (?, ?, ?) }");
+			csmt.setInt(1, empId);
+			csmt.setInt(2, salary);
+			csmt.registerOutParameter(3, OracleTypes.CURSOR);//여기는 아웃 파라미터 자리라 좀 다름
+			csmt.execute();
+			
+			rs = (ResultSet) csmt.getObject(3);
+			if(rs.next()) {
+				resultVo = new EmployeeVo();
+				resultVo.setEmail(rs.getString("email"));
+				resultVo.setEmployeeId(rs.getInt("employee_id"));
+				resultVo.setFirstName(rs.getString("first_name"));
+				resultVo.setHireDate(rs.getString("hire_date"));
+				resultVo.setLastName(rs.getString("last_name"));
+				resultVo.setSalary(rs.getInt("salary"));
+				
+				System.out.println(rs.getInt(1)); //가져온 값의 첫번 째는 employee_id
+				System.out.println(rs.getString("first_name")); //직접 컬럼명을 적어도 됨.
+				System.out.println(rs.getInt("salary"));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+		close();
+		}
+		return resultVo;
+	}
+	
+	public List<EmployeeVo> getPagingList(int page) {
+		List<EmployeeVo> list = new ArrayList<>();
+		String sql = " select b.* from (select rownum rn, a.* from (select * from employees order by employee_id) a ) b where b.rn between ? and ?";
+			try {
+				psmt = conn.prepareStatement(sql);
+				int startCnt = 1 + (page -1) * 10;
+				int endCnt = page * 10;
+				psmt.setInt(1, startCnt);
+				psmt.setInt(2, endCnt);
+				rs = psmt.executeQuery();
+				
+				while(rs.next()) {
+					EmployeeVo resultVo = new EmployeeVo();
+					resultVo.setEmail(rs.getString("email"));
+					resultVo.setEmployeeId(rs.getInt("employee_id"));
+					resultVo.setFirstName(rs.getString("first_name"));
+					resultVo.setHireDate(rs.getString("hire_date"));
+					resultVo.setLastName(rs.getString("last_name"));
+					resultVo.setSalary(rs.getInt("salary"));
+					list.add(resultVo);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} finally {
+				close();
+			}
+		return list;
+	}
+	
+	public int getTotalCnt() {
+		String sql = "select count(*) from employees";
+		int totalCnt = 0;
+		try {
+			psmt = conn.prepareStatement(sql);
+			rs = psmt.executeQuery();
+			if(rs.next()) {
+				totalCnt = rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			close();
+		}
+		return totalCnt;
 	}
 
 	private void close() {

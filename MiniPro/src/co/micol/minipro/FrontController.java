@@ -11,12 +11,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import co.micol.minipro.common.Service;
+import co.micol.minipro.member.service.CursorType;
 import co.micol.minipro.member.service.Login;
 import co.micol.minipro.member.service.LoginForm;
 import co.micol.minipro.member.service.Logout;
 import co.micol.minipro.member.service.MemberIdCheck;
 import co.micol.minipro.member.service.MemberJoin;
 import co.micol.minipro.member.service.MemberJoinForm;
+import co.micol.minipro.member.service.PagingTest;
 
 public class FrontController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -37,6 +39,8 @@ public class FrontController extends HttpServlet {
         map.put("/memberJoinForm.do", new MemberJoinForm()); //회원가입 폼
         map.put("/memberJoin.do", new MemberJoin()); //회원가입
         map.put("/idCheck.do", new MemberIdCheck()); //아이디 중복체크
+        map.put("/cursor.do", new CursorType());
+        map.put("/paging.do", new PagingTest());
 	}
 
 	protected void service(HttpServletRequest request, HttpServletResponse response) 
